@@ -742,7 +742,14 @@
         const ITEMS_PER_PAGE = 10;
         let currentPage = 1;
         let totalItems = 0;
-
+        // 内容转义
+        function translateHtml(str){
+            return str.replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+        }
         function displayItems() {
             const searchQuery = document.querySelector('#searchInput')?.value || '';
             const startDate = document.querySelector('#startDate')?.value || '';
@@ -795,10 +802,10 @@
                             });
                             li.dataset.id = item.id;
                             li.innerHTML = `
-                                <span class="content">${item.content}</span>
+                                <span class="content">${translateHtml(item.content)}</span>
                                 <span class="timestamp">${formattedTime}</span>
                                 <div class="action-buttons">
-                                    <span class="copy-btn" data-content="${item.content.replace(/"/g, '"')}">复制</span>
+                                    <span class="copy-btn" data-content="${translateHtml(item.content)}">复制</span>
                                     <span class="delete-btn" data-id="${item.id}">删除</span>
                                 </div>
                             `;
