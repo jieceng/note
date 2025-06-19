@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vogeb-在线文本笔记本</title>
+    <meta name="description" content="VogebeNote 是一款支持离线使用的在线笔记本，随时随地记录笔记与灵感。无需联网即可安全使用，支持右键一键保存到本地，简单高效，数据尽在掌控。">
+    <meta name="keywords" content="离线笔记本, 安全笔记, 右键保存, 在线记事, 无需联网, 网页笔记, 灵感记录, 高效管理, 本地保存，在线本地笔记本">
+    <meta name="author" content="jiecheng-1657677267@qq.com">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            flex-grow: 1;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            margin-top: 0;
+            color: #1a73e8;
+        }
+
+        h3 {
+            font-size: 1.3em;
+            margin: 20px 0 10px;
+            color: #555;
+        }
+
+        #inputBox {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            min-height: 180px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            resize: vertical;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            box-sizing: border-box;
+        }
+
+        #inputBox:focus {
+            border-color: #1a73e8;
+            box-shadow: 0 0 5px rgba(26, 115, 232, 0.3);
+            outline: none;
+        }
+
+        .controls {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .db-settings-close-btn,
+        .import-btn,
+        .export-btn,
+        .settings-btn {
+            background: #1a73e8;
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            text-align: center;
+            min-width: 40px;
+            transition: background 0.2s;
+            text-decoration: none;
+        }
+
+        .settings-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 889;
+        }
+
+        .import-btn:hover,
+        .export-btn:hover,
+        .settings-btn:hover {
+            background: #1557b0;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .search-container {
+            margin-bottom: 15px;
+        }
+
+        .search-input,
+        .date-input,
+        .db-input {
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        .date-input {
+            width: 48%;
+        }
+
+        .date-input:focus,
+        .search-input:focus,
+        .db-input:focus {
+            border-color: #1a73e8;
+            outline: none;
+        }
+
+        .date-range {
+            display: flex;
+            gap: 4%;
+            margin-top: 10px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        li {
+            padding: 8px 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        li:hover {
+            background-color: #f1f3f5;
+        }
+
+        li.selected {
+            background-color: #e8f0fe;
+        }
+
+        .content {
+            flex: 1;
+            white-space: nowrap;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 1rem;
+            font-size: 14px;
+        }
+
+        .timestamp {
+            color: #777;
+            font-size: 0.85em;
+            margin-left: 15px;
+            min-width: 150px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .copy-btn,
+        .delete-btn,
+        .db-action-btn {
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: background 0.2s;
+        }
+
+        .copy-btn {
+            background: #1a73e8;
+        }
+
+        .copy-btn:hover {
+            background: #1557b0;
+        }
+
+        .delete-btn {
+            background: #ff4d4f;
+        }
+
+        .delete-btn:hover {
+            background: #d9363e;
+        }
+
+        .db-action-btn {
+            background: #1a73e8;
+            margin-top: 10px;
+        }
+
+        .db-action-btn:hover {
+            background: #1557b0;
+        }
+
+        .pagination {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pagination-btn {
+            background: #1a73e8;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .pagination-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #1557b0;
+        }
+
+        .pagination-info {
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100%;
+            background: #fff;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            padding: 20px;
+            z-index: 888;
+            transform: translateX(-100%);
+        }
+
+        .settings-panel.open {
+            transform: translateX(0);
+        }
+
+        .icon-close,
+        .settings-panel.open+.container .icon-setting {
+            display: none;
+        }
+
+        .icon-setting,
+        .settings-panel.open+.container .icon-close {
+            display: block;
+        }
+
+        .settings-panel h4 {
+            margin-top: 0;
+            color: #1a73e8;
+        }
+
+        .settings-panel ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .settings-panel li {
+            padding: 10px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .settings-panel li:hover {
+            background: #e8f0fe;
+        }
+
+        .db-settings-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: px0px;
+            height: 100%;
+            background: #fff;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            padding: 20px;
+            z-index: 999;
+            overflow-y: auto;
+            transform: translateX(100%);
+        }
+
+        .db-settings-panel.open {
+            transform: translateX(0);
+        }
+
+        .db-settings-panel h4 {
+            margin-top: 0;
+            color: #1a73e8;
+        }
+
+        .db-setting-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .db-form {
+            margin-bottom: 20px;
+        }
+
+        .db-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .db-table th,
+        .db-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .db-table th {
+            background: #f1f3f5;
+        }
+
+        .no-db-message {
+            text-align: center;
+            color: #777;
+            font-size: 1rem;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #clearFilterBtn {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .copyright{
+            text-align: center;
+            font-size: 14px;
+            color: #777;
+            margin-top: 20px;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                margin: 0;
+            }
+
+            textarea,
+            .search-input,
+            .date-input,
+            .db-input {
+                font-size: 0.9rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .import-btn,
+            .export-btn,
+            .settings-btn {
+                padding: 6px 12px;
+                font-size: 0.85em;
+            }
+
+            .date-input {
+                width: 100%;
+            }
+
+            .date-range {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .timestamp {
+                font-size: 0.8em;
+                min-width: 120px;
+            }
+
+            .copy-btn,
+            .delete-btn,
+            .db-action-btn,
+            .pagination-btn {
+                padding: 5px 10px;
+                font-size: 0.8em;
+            }
+
+            .db-settings-panel {
+                width: 100%;
+            }
+
+            .settings-panel {
+                width: 100%;
+            }
+        }
+        @media (min-width: 1200px) {
+           
+        }
+    </style>
+</head>
+
+<body>
+    <div class="db-settings-panel" id="dbSettingsPanel">
+        <div class="db-setting-head">
+            <h4>数据库设置</h4>
+            <button class="db-settings-close-btn" id="DbSettingColseBtn">✖︎</button>
+        </div>
+        <div class="db-form">
+            <h5>选择数据库</h5>
+            <select class="db-input" id="selectDb">
+                <option value="">选择数据库</option>
+            </select>
+            <button class="db-action-btn" id="switchDbBtn">切换</button>
+        </div>
+        <div class="db-form">
+            <h5>新建数据库</h5>
+            <input type="text" class="db-input" id="newDbName" placeholder="输入数据库名称">
+            <button class="db-action-btn" id="createDbBtn">创建</button>
+        </div>
+        <div class="db-form">
+            <h5>删除数据库</h5>
+            <select class="db-input" id="deleteDbSelect">
+                <option value="">选择数据库</option>
+            </select>
+            <button class="db-action-btn" id="deleteDbBtn">删除</button>
+        </div>
+        <div class="db-form">
+            <h5>查询数据库</h5>
+            <table class="db-table" id="dbTable">
+                <thead>
+                    <tr>
+                        <th>数据库名称</th>
+                        <th>大小 (KB)</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <div class="settings-panel" id="settingsPanel">
+        <h4>设置</h4>
+        <ul>
+            <li id="dbSettingsOption">数据库设置</li>
+        </ul>
+    </div>
+    <div class="container">
+        <button class="settings-btn" id="settingsBtn">
+            <span class="icon-setting">⚙️</span>
+            <span class="icon-close">✖︎</span>
+        </button>
+        <div>
+        <h2>本地简易文本日记本，切勿删除浏览器，数据丢失！</h2>
+
+        <textarea id="inputBox" placeholder="输入内容，按回车保存，Shift+Enter换行，上下键切换"></textarea>
+        <div class="controls">
+            <label for="importFile" class="import-btn">导入JSON数据</label>
+            <input type="file" id="importFile" accept=".json">
+            <a href="#" id="exportBtn" class="export-btn">导出JSON数据</a>
+        </div>
+        </div>
+        <h3>已保存内容 <a id="clearFilterBtn" href="javascript:void(0);">重置</a></h3>
+        <div class="search-container">
+            <input type="text" class="search-input" id="searchInput" placeholder="搜索内容...">
+            <div class="date-range">
+                <input type="date" class="date-input" id="startDate" placeholder="开始日期">
+                <input type="date" class="date-input" id="endDate" placeholder="结束日期">
+            </div>
+        </div>
+        <div id="mainContent"></div>
+    </div>
+    <!-- 版权信息 -->
+    <div class="copyright">
+        <p>© 2025 Vogeb. All rights reserved.</p>
+    </div>
+    <script>
+        // 初始化IndexedDB
+        let db;
+        let currentDbName = localStorage.getItem('currentDbName') || '';
+        const storeName = "inputs";
+        const sizeCache = new Map();
+        let databases = [];
+
+        // 打开数据库（Promise-based）
+        function openDatabase(dbName) {
+            console.log(dbName,'3232')
+            return new Promise((resolve, reject) => {
+                console.log(`Opening database: ${dbName}`);
+                const request = indexedDB.open(dbName, 3);
+                request.onerror = (event) => {
+                    console.error(`Failed to open database ${dbName}:`, event.target.error);
+                    reject(event.target.error);
+                };
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    currentDbName = dbName;
+                    localStorage.setItem('currentDbName', dbName);
+                    console.log(`Database ${dbName} opened successfully`);
+                    // Verify object store exists
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        console.error(`Object store ${storeName} not found in ${dbName}`);
+                        db.close();
+                        reject(new Error(`Object store ${storeName} not found`));
+                        return;
+                    }
+                    resolve();
+                };
+                request.onupgradeneeded = (event) => {
+                    console.log(`Upgrading database ${dbName} to version ${event.target.result.version}`);
+                    db = event.target.result;
+                    let objectStore;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        objectStore = db.createObjectStore(storeName, { keyPath: "id", autoIncrement: true });
+                        objectStore.createIndex("content", "content", { unique: false });
+                        objectStore.createIndex("timestamp", "timestamp", { unique: false });
+                        objectStore.createIndex("deleted", "deleted", { unique: false });
+                        console.log(`Created object store ${storeName} with indexes`);
+                    } else {
+                        objectStore = event.target.transaction.objectStore(storeName);
+                        if (!objectStore.indexNames.contains("content")) {
+                            objectStore.createIndex("content", "content", { unique: false });
+                        }
+                        if (!objectStore.indexNames.contains("timestamp")) {
+                            objectStore.createIndex("timestamp", "timestamp", { unique: false });
+                        }
+                        if (!objectStore.indexNames.contains("deleted")) {
+                            objectStore.createIndex("deleted", "deleted", { unique: false });
+                            objectStore.openCursor().onsuccess = (event) => {
+                                const cursor = event.target.result;
+                                if (cursor) {
+                                    cursor.update({ ...cursor.value, deleted: false });
+                                    cursor.continue();
+                                }
+                            };
+                        }
+                    }
+                };
+            });
+        }
+
+        // 初始化应用
+        async function initApp() {
+            console.log("Initializing app...");
+            await queryDatabases();
+            try {
+                if (databases.length === 0) {
+                    console.log("No databases found, creating default database: 简易笔记");
+                    await createDatabase("简易笔记", true);
+                    await openDatabase("简易笔记");
+                    displayItems();
+                    queryDatabases();
+                } else {
+                    const firstDb = currentDbName || databases[0].name;
+                    console.log(`Loading first database: ${firstDb}`);
+                    await openDatabase(firstDb);
+                    displayItems();
+                    queryDatabases();
+                }
+                addEventListeners();
+            } catch (error) {
+                console.error("Initialization failed:", error);
+                renderNoDatabaseMessage();
+                alert("无法加载数据库，请尝试刷新页面或清除浏览器数据");
+            }
+        }
+
+        // 保存输入内容
+        function saveInput(content) {
+            if (!content.trim() || !db) return;
+            const transaction = db.transaction([storeName], "readwrite");
+            const objectStore = transaction.objectStore(storeName);
+            objectStore.add({ content: content, timestamp: new Date().toISOString(), deleted: false });
+            transaction.oncomplete = () => {
+                console.log(`Saved content to ${currentDbName}`);
+                displayItems();
+                currentIndex = -1;
+                items = [];
+                const inputBox = document.getElementById("inputBox");
+                inputBox.focus();
+                if (inputBox) inputBox.value = "";
+                sizeCache.delete(currentDbName);
+                queryDatabases();
+            };
+            transaction.onerror = (event) => {
+                console.error("Save failed:", event.target.error);
+            };
+        }
+
+        // 导入JSON数据
+        function importData(file) {
+            if (!db) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (!Array.isArray(data)) {
+                        alert("无效的JSON格式：需要一个对象数组");
+                        return;
+                    }
+                    const transaction = db.transaction([storeName], "readwrite");
+                    const objectStore = transaction.objectStore(storeName);
+                    data.forEach((item) => {
+                        if (typeof item.content === "string" && item.content.trim()) {
+                            objectStore.add({
+                                content: item.content,
+                                timestamp: item.timestamp && isValidISODate(item.timestamp)
+                                    ? item.timestamp
+                                    : new Date().toISOString(),
+                                deleted: false
+                            });
+                        }
+                    });
+                    transaction.oncomplete = () => {
+                        console.log(`Imported data to ${currentDbName}`);
+                        displayItems();
+                        currentIndex = -1;
+                        items = [];
+                        alert("数据导入成功");
+                        sizeCache.delete(currentDbName);
+                        queryDatabases();
+                    };
+                    transaction.onerror = (event) => {
+                        console.error("Import failed:", event.target.error);
+                        alert("数据导入失败，请检查文件格式");
+                    };
+                } catch (e) {
+                    console.error("JSON parse failed:", e);
+                    alert("无效的JSON文件");
+                }
+            };
+            reader.onerror = () => {
+                alert("读取文件失败");
+            };
+            reader.readAsText(file);
+        }
+
+        // 验证ISO日期格式
+        function isValidISODate(str) {
+            return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*Z$/.test(str) && !isNaN(Date.parse(str));
+        }
+
+        // 导出JSON数据
+        function exportData() {
+            if (!db) return;
+            const transaction = db.transaction([storeName], "readonly");
+            const objectStore = transaction.objectStore(storeName);
+            const records = [];
+            objectStore.openCursor().onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    if (!cursor.value.deleted) {
+                        records.push({
+                            content: cursor.value.content,
+                            timestamp: cursor.value.timestamp
+                        });
+                    }
+                    cursor.continue();
+                } else {
+                    console.log(`Exported ${records.length} records from ${currentDbName}`);
+                    const json = JSON.stringify(records, null, 2);
+                    const blob = new Blob([json], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `data-${new Date().toISOString().slice(0, 10)}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            };
+            transaction.onerror = (event) => {
+                console.error("Export failed:", event.target.error);
+                alert("数据导出失败");
+            };
+        }
+
+        // 复制内容到剪贴板
+        function copyContent(content) {
+            navigator.clipboard.writeText(content).then(() => {
+                alert("内容已复制到剪贴板");
+            }).catch((err) => {
+                console.error("Copy failed:", err);
+                alert("复制失败，请重试");
+            });
+        }
+
+        // 软删除记录
+        function deleteItem(id) {
+            if (!db) return;
+            const transaction = db.transaction([storeName], "readwrite");
+            const objectStore = transaction.objectStore(storeName);
+            objectStore.get(Number(id)).onsuccess = (event) => {
+                const record = event.target.result;
+                if (record) {
+                    record.deleted = true;
+                    objectStore.put(record);
+                }
+            };
+            transaction.oncomplete = () => {
+                console.log(`Soft-deleted item ${id} in ${currentDbName}`);
+                displayItems();
+                currentIndex = -1;
+                items = [];
+                sizeCache.delete(currentDbName);
+                queryDatabases();
+            };
+            transaction.onerror = (event) => {
+                console.error("Soft delete failed:", event.target.error);
+            };
+        }
+
+        // 分页和显示逻辑
+        const ITEMS_PER_PAGE = 10;
+        let currentPage = 1;
+        let totalItems = 0;
+
+        function displayItems() {
+            const searchQuery = document.querySelector('#searchInput')?.value || '';
+            const startDate = document.querySelector('#startDate')?.value || '';
+            const endDate = document.querySelector('#endDate')?.value || '';
+            const mainContent = document.getElementById("mainContent");
+            if (!db || !db.objectStoreNames.contains(storeName)) {
+                console.warn(`No valid database or object store ${storeName} in ${currentDbName}`);
+                renderNoDatabaseMessage();
+                return;
+            }
+            console.log(`Rendering UI for ${currentDbName} with query: "${searchQuery}", start: "${startDate}", end: "${endDate}"`);
+            mainContent.innerHTML = `<ul id="itemList"></ul>
+                <div class="pagination">
+                    <button class="pagination-btn" id="prevPage" disabled>上一页</button>
+                    <span class="pagination-info" id="pageInfo"></span>
+                    <button class="pagination-btn" id="nextPage" disabled>下一页</button>
+                </div>
+            `;
+            const ul = document.getElementById("itemList");
+            ul.innerHTML = "";
+            totalItems = 0;
+            try {
+                const transaction = db.transaction([storeName], "readonly");
+                const objectStore = transaction.objectStore(storeName);
+                const index = objectStore.index("timestamp");
+                const items = [];
+                index.openCursor(null, "prev").onsuccess = (event) => {
+                    const cursor = event.target.result;
+                    if (cursor) {
+                        const content = cursor.value.content.toLowerCase();
+                        const query = searchQuery.toLowerCase();
+                        const timestamp = new Date(cursor.value.timestamp).getTime();
+                        const start = startDate ? new Date(startDate).getTime() : -Infinity;
+                        const end = endDate ? new Date(endDate).setHours(23, 59, 59, 999) : Infinity;
+                        if (!cursor.value.deleted && (!query || content.includes(query)) && timestamp >= start && timestamp <= end) {
+                            items.push(cursor.value);
+                        }
+                        cursor.continue();
+                    } else {
+                        totalItems = items.length;
+                        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+                        const endIndex = startIndex + ITEMS_PER_PAGE;
+                        const pageItems = items.slice(startIndex, endIndex);
+                        pageItems.forEach((item) => {
+                            const li = document.createElement("li");
+                            const date = item.timestamp ? new Date(item.timestamp) : new Date();
+                            const formattedTime = date.toLocaleString('zh-CN', {
+                                year: 'numeric', month: '2-digit', day: '2-digit',
+                                hour: '2-digit', minute: '2-digit', second: '2-digit'
+                            });
+                            li.dataset.id = item.id;
+                            li.innerHTML = `
+                                <span class="content">${item.content}</span>
+                                <span class="timestamp">${formattedTime}</span>
+                                <div class="action-buttons">
+                                    <span class="copy-btn" data-content="${item.content.replace(/"/g, '"')}">复制</span>
+                                    <span class="delete-btn" data-id="${item.id}">删除</span>
+                                </div>
+                            `;
+                            ul.appendChild(li);
+                        });
+                        updatePaginationControls();
+                    }
+                };
+                transaction.onerror = (event) => {
+                    console.error("Display items transaction failed:", event.target.error);
+                    renderNoDatabaseMessage();
+                };
+            } catch (error) {
+                console.error("Failed to create transaction in displayItems:", error);
+                renderNoDatabaseMessage();
+            }
+        }
+
+        function updatePaginationControls() {
+            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+            const pageInfo = document.getElementById("pageInfo");
+            const prevBtn = document.getElementById("prevPage");
+            const nextBtn = document.getElementById("nextPage");
+            if (pageInfo) {
+                pageInfo.textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;
+                prevBtn.disabled = currentPage === 1;
+                nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+            }
+        }
+
+        // 数据库管理
+        async function createDatabase(name, hiddenAlert) {
+            if (!name.trim()) {
+                alert("数据库名称不能为空");
+                return;
+            }
+            return new Promise((resolve, reject) => {
+                console.log(`Creating database: ${name}`);
+                const request = indexedDB.open(name, 3);
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    let objectStore;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        objectStore = db.createObjectStore(storeName, { keyPath: "id", autoIncrement: true });
+                        objectStore.createIndex("content", "content", { unique: false });
+                        objectStore.createIndex("timestamp", "timestamp", { unique: false });
+                        objectStore.createIndex("deleted", "deleted", { unique: false });
+                        console.log(`Created object store ${storeName} in ${name}`);
+                    }
+                };
+                request.onsuccess = () => {
+                    request.result.close();
+                    console.log(`Database ${name} created successfully`);
+                    if (!hiddenAlert) {
+                        alert(`数据库 ${name} 创建成功`);
+                    }
+                    resolve();
+                };
+                request.onerror = (event) => {
+                    console.error("Create database failed:", event.target.error);
+                    alert("创建数据库失败");
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        function deleteDatabase(name) {
+            if (!name) {
+                alert("请选择一个的数据库进行删除");
+                return;
+            }
+            if (!name || name === currentDbName) {
+                alert("请选择一个非当前使用的数据库进行删除");
+                return;
+            }
+            if (!confirm(`确定要删除数据库 ${name} 吗？此操作不可恢复！`)) {
+                return;
+            }
+            const request = indexedDB.deleteDatabase(name);
+            request.onsuccess = () => {
+                console.log(`Deleted database: ${name}`);
+                alert(`数据库 ${name} 删除成功`);
+                sizeCache.delete(name);
+                initApp();
+            };
+            request.onerror = (event) => {
+                console.error("Delete database failed:", event.target.error);
+                alert("删除数据库失败");
+            };
+        }
+
+        async function queryDatabases() {
+            databases = await indexedDB.databases();
+            databases.sort((a, b) => a.name.localeCompare(b.name));
+            const dbSelect = document.getElementById("selectDb");
+            const deleteDbSelect = document.getElementById("deleteDbSelect");
+            const dbTableBody = document.getElementById("dbTable").querySelector("tbody");
+            dbSelect.innerHTML = '<option value="">选择数据库</option>';
+            deleteDbSelect.innerHTML = '<option value="">选择数据库</option>';
+            dbTableBody.innerHTML = "";
+            for (const dbInfo of databases) {
+                const name = dbInfo.name;
+                const selectOption = document.createElement("option");
+                selectOption.value = name;
+                selectOption.textContent = name;
+                selectOption.selected = name === currentDbName;
+                dbSelect.appendChild(selectOption);
+                if (name !== currentDbName) {
+                    const deleteOption = document.createElement("option");
+                    deleteOption.value = name;
+                    deleteOption.textContent = name;
+                    deleteDbSelect.appendChild(deleteOption);
+                }
+                let size = sizeCache.get(name);
+                if (size === undefined) {
+                    size = await estimateDbSize(name);
+                    sizeCache.set(name, size);
+                }
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${name}</td>
+                    <td>${(size / 1024).toFixed(2)}</td>
+                `;
+                dbTableBody.appendChild(tr);
+            }
+            console.log(`Queried databases: ${databases.map(d => d.name).join(", ")}`);
+        }
+
+        async function estimateDbSize(dbName) {
+            return new Promise((resolve) => {
+                const request = indexedDB.open(dbName);
+                request.onsuccess = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        db.close();
+                        resolve(0);
+                        return;
+                    }
+                    const transaction = db.transaction([storeName], "readonly");
+                    const objectStore = transaction.objectStore(storeName);
+                    let size = 0;
+                    objectStore.openCursor().onsuccess = (event) => {
+                        const cursor = event.target.result;
+                        if (cursor) {
+                            const record = cursor.value;
+                            size += JSON.stringify(record).length * 2; // UTF-16 size in bytes
+                            cursor.continue();
+                        } else {
+                            db.close();
+                            resolve(size);
+                        }
+                    };
+                    transaction.onerror = () => {
+                        db.close();
+                        resolve(0);
+                    };
+                };
+                request.onerror = () => resolve(0);
+            });
+        }
+
+        // 切换内容
+        let items = [];
+        let currentIndex = -1;
+        let lastSearchQuery = "";
+        let lastStartDate = "";
+        let lastEndDate = "";
+
+        function loadItems(callback, searchQuery = "", startDate = "", endDate = "") {
+            if (!db || !db.objectStoreNames.contains(storeName)) return;
+            items = [];
+            const transaction = db.transaction([storeName], "readonly");
+            const objectStore = transaction.objectStore(storeName);
+            const index = objectStore.index("timestamp");
+            index.openCursor(null, "prev").onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    const content = cursor.value.content.toLowerCase();
+                    const query = searchQuery.toLowerCase();
+                    const timestamp = new Date(cursor.value.timestamp).getTime();
+                    const start = startDate ? new Date(startDate).getTime() : -Infinity;
+                    const end = endDate ? new Date(endDate).setHours(23, 59, 59, 999) : Infinity;
+                    if (!cursor.value.deleted && (!query || content.includes(query)) && timestamp >= start && timestamp <= end) {
+                        items.push(cursor.value);
+                    }
+                    cursor.continue();
+                } else {
+                    callback();
+                }
+            };
+        }
+
+        function switchContent(direction) {
+            if (!db || !db.objectStoreNames.contains(storeName)) return;
+            const searchInput = document.getElementById("searchInput");
+            const startDateInput = document.getElementById("startDate");
+            const endDateInput = document.getElementById("endDate");
+            const searchQuery = searchInput ? searchInput.value : "";
+            const startDate = startDateInput ? startDateInput.value : "";
+            const endDate = endDateInput ? endDateInput.value : "";
+            if (items.length === 0 || searchQuery !== lastSearchQuery || startDate !== lastStartDate || endDate !== lastEndDate) {
+                lastSearchQuery = searchQuery;
+                lastStartDate = startDate;
+                lastEndDate = endDate;
+                loadItems(() => switchContent(direction), searchQuery, startDate, endDate);
+                return;
+            }
+            if (direction === "up") {
+                currentIndex = (currentIndex + 1) % items.length;
+            } else if (direction === "down") {
+                currentIndex = (currentIndex - 1 + items.length) % items.length;
+            }
+            if (currentIndex >= 0 && currentIndex < items.length) {
+                const inputBox = document.getElementById("inputBox");
+                if (inputBox) {
+                    inputBox.value = items[currentIndex].content;
+                    const listItems = document.querySelectorAll("#itemList li");
+                    listItems.forEach(li => li.classList.remove("selected"));
+                    const selectedItem = Array.from(listItems).find(li => Number(li.dataset.id) === items[currentIndex].id);
+                    if (selectedItem) {
+                        selectedItem.classList.add("selected");
+                    }
+                }
+            }
+        }
+
+        // 渲染无数据库消息
+        function renderNoDatabaseMessage() {
+            console.log("Rendering no database message");
+            const mainContent = document.getElementById("mainContent");
+            mainContent.innerHTML = `
+                <div class="no-db-message">
+                    无数据库，请在设置面板中创建新数据库。
+                </div>
+            `;
+        }
+
+        // 添加事件监听器
+        function addEventListeners() {
+            console.log("Adding event listeners");
+            window.addEventListener("keydown", (e) => {
+                const inputBox = document.getElementById("inputBox")
+                if (inputBox && e.target === inputBox) {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        const input = e.target.value;
+                        saveInput(input);
+                        e.target.value = "";
+                    } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        switchContent("up");
+                    } else if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        switchContent("down");
+                    }
+                }
+            });
+
+            document.body.addEventListener("click", (e) => {
+                if (e.target.classList.contains("delete-btn")) {
+                    const id = e.target.getAttribute("data-id");
+                    deleteItem(id);
+                } else if (e.target.classList.contains("copy-btn")) {
+                    const content = e.target.getAttribute("data-content");
+                    copyContent(content);
+                } else if (e.target.classList.contains("content")) {
+                    const textContent = e.target.textContent;
+                    const inputBox = document.getElementById("inputBox");
+                    if (inputBox) {
+                        inputBox.value = textContent;
+                        inputBox.focus();
+                    }
+                } else if (e.target.id === 'exportBtn') {
+                    exportData();
+                } else if (e.target.id === 'prevPage') {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        displayItems();
+                        currentIndex = -1;
+                        items = [];
+                    }
+                } else if (e.target.id === 'nextPage') {
+                    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        displayItems();
+                        currentIndex = -1;
+                        items = [];
+                    }
+                } else if (e.target.id === 'clearFilterBtn') {
+                    const searchInput = document.getElementById("searchInput");
+                    const startDate = document.getElementById("startDate");
+                    const endDate = document.getElementById("endDate");
+                    currentPage = 1;
+                    searchInput.value = ''
+                    startDate.value = ''
+                    endDate.value = ''
+                    displayItems();
+                    currentIndex = -1;
+                    items = [];
+                }
+            });
+
+            window.addEventListener('change', (e) => {
+                if (e.target.id === 'startDate' || e.target.id === 'endDate') {
+                    currentPage = 1;
+                    displayItems();
+                    currentIndex = -1;
+                    items = [];
+                } else if (e.target.id === 'importFile') {
+                    const file = e.target.files[0];
+                    if (file && file.type === "application/json") {
+                        importData(file);
+                    } else {
+                        alert("请选择一个JSON文件");
+                    }
+                    e.target.value = "";
+                }
+            })
+            window.addEventListener('input',(e)=>{
+                if (e.target.id === 'searchInput') {
+                    currentPage = 1;
+                    displayItems();
+                    currentIndex = -1;
+                    items = [];
+                }
+            })
+        }
+
+        // 设置面板事件
+        const settingsPanel = document.getElementById("settingsPanel");
+        const dbSettingsPanel = document.getElementById("dbSettingsPanel");
+        const settingsBtn = document.getElementById("settingsBtn");
+
+        function toggleSettingsPanel() {
+            const isSettingsOpen = settingsPanel.classList.contains("open");
+            if (isSettingsOpen) {
+                settingsPanel.classList.remove("open");
+                dbSettingsPanel.classList.remove("open");
+            } else {
+                settingsPanel.classList.add("open");
+            }
+        }
+
+        settingsBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleSettingsPanel();
+        });
+
+        document.getElementById("dbSettingsOption").addEventListener("click", (e) => {
+            e.stopPropagation();
+            dbSettingsPanel.classList.toggle("open");
+        });
+
+        document.getElementById("createDbBtn").addEventListener("click", async () => {
+            const name = document.getElementById("newDbName").value;
+            await createDatabase(name);
+            queryDatabases();
+            document.getElementById("newDbName").value = "";
+        });
+
+        document.getElementById("deleteDbBtn").addEventListener("click", () => {
+            const name = document.getElementById("deleteDbSelect").value;
+            deleteDatabase(name);
+        });
+
+        document.getElementById("switchDbBtn").addEventListener("click", async () => {
+            const name = document.getElementById("selectDb").value;
+            if (name && name !== currentDbName) {
+                if (db) db.close();
+                console.log(`Switching to database: ${name}`);
+                try {
+                    await openDatabase(name);
+                    displayItems();
+                    queryDatabases();
+                    alert(`已切换到数据库 ${name}`);
+                } catch (error) {
+                    console.error(`Failed to switch to database ${name}:`, error);
+                    alert(`切换到数据库 ${name} 失败`);
+                }
+            }
+        });
+
+        // 点击关闭数据库设置按钮
+        document.getElementById('DbSettingColseBtn').addEventListener('click', async () => {
+            dbSettingsPanel.classList.remove("open");
+        })
+        // 外部点击关闭面板
+        document.addEventListener("click", (e) => {
+            if (
+                !settingsPanel.contains(e.target) &&
+                !dbSettingsPanel.contains(e.target) &&
+                !settingsBtn.contains(e.target) &&
+                (settingsPanel.classList.contains("open") || dbSettingsPanel.classList.contains("open"))
+            ) {
+                settingsPanel.classList.remove("open");
+                dbSettingsPanel.classList.remove("open");
+            }
+        });
+
+        // 初始化应用
+        initApp();
+    </script>
+</body>
+
+</html>
